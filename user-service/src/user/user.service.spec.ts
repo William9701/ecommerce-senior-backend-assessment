@@ -5,8 +5,9 @@ import { User } from './user.entity';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
+import { Response } from 'express';
 
-const mockUser = { id: 1, email: 'test@example.com', password: 'hashedpass', createdAt: new Date() };
+const mockUser = { id: 1, email: 'test@example.com', password: 'hashedpass', sessionId: 'session123', createdAt: new Date() };
 
 describe('UserService', () => {
   let userService: UserService;
@@ -44,16 +45,25 @@ describe('UserService', () => {
   });
 
   it('should login a user and return JWT', async () => {
+    const mockUser = { id: 1, email: 'test@example.com', password: 'hashed_password', sessionId: 'session123', createdAt: new Date() };
     jest.spyOn(userRepository, 'findOne').mockResolvedValueOnce(mockUser); // Simulate existing user
     jest.spyOn(bcrypt, 'compare').mockResolvedValue(true);
 
-    const result = await userService.login('test@example.com', 'password123');
-    expect(result).toEqual({ access_token: 'mocked_jwt_token' });
+    const res = { cookie: jest.fn() } as unknown as Response; // Mock the Response object
+
+    const result = await userService.login('test@example.com', 'password123', res);
+    
+    expect(result).toEqual({ message: 'Login successful' });
+    expect(res.cookie).toHaveBeenCalledWith('session_id', expect.any(String), expect.objectContaining({
+      httpOnly: true,
+      maxAge: 3600000, // 1 hour expiration
+    }));
   });
+
 
   it('should return user details', async () => {
     jest.spyOn(userRepository, 'findOne').mockResolvedValueOnce(mockUser); // Ensure findOne returns the mock user
-    const result = await userService.getUser(1, 'mocked_jwt_token');
+    const result = await userService.getUser(1);
     expect(result).toEqual(mockUser);
   });
   

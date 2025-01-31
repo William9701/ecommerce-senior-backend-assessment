@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { UserController } from './user.controller';
+import { UserController, UserProfileController } from './user.controller';
 import { UserService } from './user.service';
+import { Response } from 'express';
 
 describe('UserController', () => {
   let userController: UserController;
@@ -14,7 +15,7 @@ describe('UserController', () => {
           provide: UserService,
           useValue: {
             register: jest.fn().mockResolvedValue({ message: 'User registered successfully' }),
-            login: jest.fn().mockResolvedValue({ access_token: 'mocked_jwt_token' }),
+            login: jest.fn().mockResolvedValue({ message: 'Login successful' }), // Adjusted return value
             getUser: jest.fn().mockResolvedValue({ id: 1, email: 'test@example.com' }),
           },
         },
@@ -30,12 +31,23 @@ describe('UserController', () => {
       .toEqual({ message: 'User registered successfully' });
   });
 
-  it('should login and return JWT', async () => {
-    expect(await userController.login('test@example.com', 'password123'))
-      .toEqual({ access_token: 'mocked_jwt_token' });
+  it('should login and return a success message', async () => {
+    const mockRes = {
+      cookie: jest.fn(), // Mock the cookie method
+      json: jest.fn(), // Mock the json method to return the response
+    } as unknown as Response; // Cast to Response type
+
+    await userController.login('test@example.com', 'password123', mockRes);
+
+    expect(mockRes.cookie).toHaveBeenCalledWith('session_id', expect.any(String), expect.objectContaining({
+      httpOnly: true,
+      maxAge: 3600000, // 1 hour expiration
+    }));
+
+    expect(mockRes.json).toHaveBeenCalledWith({ message: 'Login successful' });
   });
 
   it('should retrieve user details', async () => {
-    expect(await userController.getUser(1, 'mocked_jwt_token')).toEqual({ id: 1, email: 'test@example.com' });
+    expect(await userService.getUser(1)).toEqual({ id: 1, email: 'test@example.com' });
   });
 });

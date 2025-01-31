@@ -1,8 +1,36 @@
-import { Controller, Post, Body, Get,Req, Param, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Body, Get, Req, Res, Param, UseGuards } from '@nestjs/common';
+import { Response } from 'express';
 import { UserService } from './user.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
+
 @Controller('users')
+export class UserProfileController {
+  constructor(private readonly userService: UserService) {}
+
+  @Post('logout')
+  @UseGuards(JwtAuthGuard) // Ensure only authenticated users can log out
+  async logout(@Req() req, @Res() res: Response) {
+    const sessionId = req.cookies.session_id;
+    console.log("sessionId", sessionId);
+    return this.userService.logout(sessionId, res);
+  }
+
+
+  @Get(':id')
+  @UseGuards(JwtAuthGuard) // Now retrieves token automatically
+  async getUser(@Param('id') id: number, @Req() req) {
+    return this.userService.getUser(id);
+  }
+
+  
+
+}
+
+
+
+
+@Controller()
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
@@ -12,24 +40,12 @@ export class UserController {
   }
 
   @Post('login')
-  async login(@Body('email') email: string, @Body('password') password: string) {
-    return this.userService.login(email, password);
+  async login(@Body('email') email: string, @Body('password') password: string, @Res() res: Response) {
+    
+    return this.userService.login(email, password, res);
   }
 
-  @Post('logout')
-  async logout(@Body('id') id: number) {
-    return this.userService.logout(id);
-  }
-
-
-  @Get(':id')
-  @UseGuards(JwtAuthGuard) // 🔒 Protect this route
-  async getUser(@Param('id') id: number, @Req() req) {
-    const token = req.headers.authorization?.split(' ')[1]; // Extract token from header
-    console.log('getUser', id, token);
-    return this.userService.getUser(id, token);
-  }
   
-
 }
+
 

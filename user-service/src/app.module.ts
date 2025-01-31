@@ -1,7 +1,9 @@
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { UserModule } from './user/user.module';
+import { AuthMiddleware } from './auth/auth.middleware';  // Import the middleware
+import { RedisModule } from './redis/redis.module';
 
 @Module({
   imports: [
@@ -16,7 +18,14 @@ import { UserModule } from './user/user.module';
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: true, // Set to false in production
     }),
-    UserModule
+    UserModule,
+    RedisModule, // Import the RedisModule
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    // Apply the AuthMiddleware to the user routes
+    consumer.apply(AuthMiddleware).forRoutes('users');
+  }
+}
+// In this example, we've added the AuthMiddleware to the user routes by calling consumer.apply(AuthMiddleware).forRoutes('users'). This will ensure that the middleware is executed for all routes under the /users path. You can also pass multiple paths as arguments to forRoutes to apply the middleware to multiple paths.
