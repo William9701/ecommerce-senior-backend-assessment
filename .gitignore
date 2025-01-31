@@ -1,0 +1,11 @@
+# compiled output
+user-service/dist
+user-service/node_modules
+/build
+
+# IDE - VSCode
+.vscode/*
+
+# dotenv environment variable files
+user-service/.env
+
