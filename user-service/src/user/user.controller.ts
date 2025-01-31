@@ -8,7 +8,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 export class UserProfileController {
   constructor(private readonly userService: UserService) {}
 
-  @Post('logout')
+  @Get('logout')
   @UseGuards(JwtAuthGuard) // Ensure only authenticated users can log out
   async logout(@Req() req, @Res() res: Response) {
     const sessionId = req.cookies.session_id;
