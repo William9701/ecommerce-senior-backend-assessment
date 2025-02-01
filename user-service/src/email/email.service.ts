@@ -1,9 +1,10 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class EmailService {
   private transporter: nodemailer.Transporter;
+  private readonly logger = new Logger(EmailService.name);
 
   constructor() {
     this.transporter = nodemailer.createTransport({
@@ -26,9 +27,11 @@ export class EmailService {
     };
 
     try {
+      this.logger.log(`Sending welcome email to ${email}`);
       await this.transporter.sendMail(mailOptions);
+      this.logger.log(`Welcome email sent to ${email}`);
     } catch (error) {
-      console.error('Error sending email:', error);
+      this.logger.error('Error sending email:', error);
       throw new InternalServerErrorException('Failed to send email');
     }
   }

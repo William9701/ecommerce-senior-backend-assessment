@@ -18,8 +18,8 @@ describe('User API (e2e)', () => {
 
   it('/register (POST)', async () => {
     const response = await request(app.getHttpServer())
-      .post('/users/register')
-      .send({ email: 'test25@example.com', password: 'password123' });
+      .post('/register')
+      .send({ email: 'test251@example.com', password: 'password123' });
 
     expect(response.status).toBe(201);
     expect(response.body.message).toBe('User registered successfully');
@@ -27,19 +27,22 @@ describe('User API (e2e)', () => {
 
   it('/login (POST)', async () => {
     const response = await request(app.getHttpServer())
-      .post('/users/login')
-      .send({ email: 'test@example.com', password: 'password123' });
+      .post('/login')
+      .send({ email: 'test251@example.com', password: 'password123' });
 
     expect(response.status).toBe(201);
     jwtToken = response.body.token; // Adjust this based on your actual response structure
     });
 
     it('/users/:id (GET)', async () => {
-    const response = await request(app.getHttpServer())
+      console.log('JWT Token:', jwtToken); // Debugging
+    
+      const response = await request(app.getHttpServer())
         .get('/users/1')
         .set('Authorization', `Bearer ${jwtToken}`);
-  
-    expect(response.status).toBe(200);
+    
+      console.log('GET /users/:id Response:', response.body); // Debugging
+      expect(response.status).toBe(200);
     });
 
   afterAll(async () => {

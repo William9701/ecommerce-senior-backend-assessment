@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException, BadRequestException, UnauthorizedException, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  UnauthorizedException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { Response } from 'express';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -7,8 +13,8 @@ import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { RedisService } from '../redis/redis.service'; // Import Redis service
 import { v4 as uuidv4 } from 'uuid';
-import { EmailService } from '../services/email.service'; // Import EmailService
-
+import { EmailService } from '../email/email.service'; // Import EmailService
+import { RabbitMQService } from '../rabbitmq/rabbitmq.service';
 @Injectable()
 export class UserService {
   constructor(
@@ -16,35 +22,42 @@ export class UserService {
     private jwtService: JwtService,
     private redisService: RedisService, // Inject Redis service
     private emailService: EmailService, // Inject EmailService
+    private rabbitMQService: RabbitMQService, // Inject RabbitMQ service
   ) {}
 
   async register(email: string, password: string) {
-    const existingUser = await this.userRepository.findOne({ where: { email } });
+    const existingUser = await this.userRepository.findOne({
+      where: { email },
+    });
     if (existingUser) {
       throw new BadRequestException('Email already in use');
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = this.userRepository.create({ email, password: hashedPassword });
+    const user = this.userRepository.create({
+      email,
+      password: hashedPassword,
+    });
     await this.userRepository.save(user);
 
     // ✅ Send welcome email asynchronously
-    try {
-      await this.emailService.sendWelcomeEmail(email);
-    } catch (error) {
-      console.error("Error sending welcome email:", error);
-    }
+    // Send message to RabbitMQ
+    await this.rabbitMQService.sendToQueue(JSON.stringify({ email }));
+    // try {
+    //   await this.emailService.sendWelcomeEmail(email);
+    // } catch (error) {
+    //   console.error("Error sending welcome email:", error);
+    // }
 
     return { message: 'User registered successfully' };
-}
-
+  }
 
   async login(email: string, password: string, res: Response) {
     const user = await this.userRepository.findOne({ where: { email } });
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    
+
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       throw new BadRequestException('Invalid credentials');
@@ -54,10 +67,14 @@ export class UserService {
     const sessionId = uuidv4();
 
     try {
-      await this.redisService.set(`session:${sessionId}`, JSON.stringify({ userId: user.id, token }), 3600);
+      await this.redisService.set(
+        `session:${sessionId}`,
+        JSON.stringify({ userId: user.id, token }),
+        3600,
+      );
     } catch (error) {
-      console.error("Redis error:", error);
-      throw new InternalServerErrorException("Error storing session in Redis");
+      console.error('Redis error:', error);
+      throw new InternalServerErrorException('Error storing session in Redis');
     }
 
     try {
@@ -68,18 +85,16 @@ export class UserService {
         maxAge: 3600000,
       });
     } catch (error) {
-      console.error("Error setting cookie:", error);
-      throw new InternalServerErrorException("Error setting authentication cookie");
+      console.error('Error setting cookie:', error);
+      throw new InternalServerErrorException(
+        'Error setting authentication cookie',
+      );
     }
 
     return res.json({ token });
-}
-
-  
-  
+  }
 
   async getUser(id: number) {
-    
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) {
       throw new NotFoundException('User not found');
@@ -93,5 +108,3 @@ export class UserService {
     return res.json({ message: 'Logged out successfully' });
   }
 }
-
-

@@ -2,11 +2,13 @@ import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { UserModule } from './user/user.module';
-import { AuthMiddleware } from './auth/auth.middleware';  // Import the middleware
+import { AuthMiddleware } from './auth/auth.middleware'; // Import the middleware
 import { RedisModule } from './redis/redis.module';
-import { EmailService } from './services/email.service';
-
-
+import { EmailService } from './email/email.service';
+import { RabbitMQService } from './rabbitmq/rabbitmq.service';
+import { EmailConsumer } from './email/email.consumer';
+import * as cookieParser from 'cookie-parser';
+import { RabbitMQModule } from './rabbitmq/rabbitmq.module'; // Import RabbitMQModule
 @Module({
   imports: [
     ConfigModule.forRoot(), // Load environment variables
@@ -22,14 +24,15 @@ import { EmailService } from './services/email.service';
     }),
     UserModule,
     RedisModule, // Import the RedisModule
+    RabbitMQModule, // Import the RabbitMQModule
   ],
-  providers: [EmailService],  // ✅ Register EmailService
-  exports: [EmailService],   // ✅ Export EmailService
+  providers: [EmailService, RabbitMQService, EmailConsumer], // ✅ Register EmailService
+  exports: [EmailService], // ✅ Export EmailService
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     // Apply the AuthMiddleware to the user routes
-    consumer.apply(AuthMiddleware).forRoutes('users');
+    consumer.apply(cookieParser(), AuthMiddleware).forRoutes('users');
   }
 }
 // In this example, we've added the AuthMiddleware to the user routes by calling consumer.apply(AuthMiddleware).forRoutes('users'). This will ensure that the middleware is executed for all routes under the /users path. You can also pass multiple paths as arguments to forRoutes to apply the middleware to multiple paths.
