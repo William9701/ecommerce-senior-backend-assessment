@@ -15,6 +15,8 @@ import { RedisService } from '../redis/redis.service'; // Import Redis service
 import { v4 as uuidv4 } from 'uuid';
 import { EmailService } from '../email/email.service'; // Import EmailService
 import { RabbitMQService } from '../rabbitmq/rabbitmq.service';
+import * as EmailValidator from 'email-validator'; // For email validation
+
 @Injectable()
 export class UserService {
   constructor(
@@ -26,29 +28,41 @@ export class UserService {
   ) {}
 
   async register(email: string, password: string) {
+    // Check for missing fields
+    if (!email || !password) {
+      throw new BadRequestException('Email and password are required');
+    }
+  
+    // Check if the email format is valid
+    const isEmailValid = EmailValidator.validate(email); // Alternatively, you can use regex
+    if (!isEmailValid) {
+      throw new BadRequestException('Invalid email format');
+    }
+  
+    // Check if the password meets the strength criteria (e.g., min 8 chars, includes number, special char)
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!passwordRegex.test(password)) {
+      throw new BadRequestException('Password too weak. Must contain at least 8 characters, a number, and a special character.');
+    }
+  
     const existingUser = await this.userRepository.findOne({
       where: { email },
     });
     if (existingUser) {
       throw new BadRequestException('Email already in use');
     }
-
+  
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = this.userRepository.create({
       email,
       password: hashedPassword,
     });
     await this.userRepository.save(user);
-
+  
     // ✅ Send welcome email asynchronously
     // Send message to RabbitMQ
     await this.rabbitMQService.sendToQueue(JSON.stringify({ email }));
-    // try {
-    //   await this.emailService.sendWelcomeEmail(email);
-    // } catch (error) {
-    //   console.error("Error sending welcome email:", error);
-    // }
-
+  
     return { message: 'User registered successfully' };
   }
 

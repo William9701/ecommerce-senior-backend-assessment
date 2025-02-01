@@ -11,7 +11,7 @@ export class AuthMiddleware implements NestMiddleware {
 
     const sessionId = req.cookies.session_id; // Read cookie automatically
     if (!sessionId) {
-      throw new UnauthorizedException('Session expired Pls login to access this route');
+      throw new UnauthorizedException('Session expired or invalid Pls login to access this route');
     }
 
     // Retrieve token from Redis

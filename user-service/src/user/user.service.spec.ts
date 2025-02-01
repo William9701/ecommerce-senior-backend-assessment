@@ -7,6 +7,7 @@ import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { RedisService } from '../redis/redis.service';
 import { EmailService } from '../email/email.service';
+import { RabbitMQService } from '../rabbitmq/rabbitmq.service';
 import { Response } from 'express';
 import {
   BadRequestException,
@@ -27,6 +28,7 @@ describe('UserService', () => {
   let jwtService: JwtService;
   let redisService: RedisService;
   let emailService: EmailService;
+  let rabbitMQService: RabbitMQService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -55,6 +57,12 @@ describe('UserService', () => {
           provide: EmailService,
           useValue: { sendWelcomeEmail: jest.fn().mockResolvedValue(null) },
         },
+        {
+          provide: RabbitMQService,
+          useValue: {
+            sendToQueue: jest.fn().mockResolvedValue(null),
+          },
+        },
       ],
     }).compile();
 
@@ -63,23 +71,22 @@ describe('UserService', () => {
     jwtService = module.get<JwtService>(JwtService);
     redisService = module.get<RedisService>(RedisService);
     emailService = module.get<EmailService>(EmailService);
+    rabbitMQService = module.get<RabbitMQService>(RabbitMQService);
   });
 
   // ✅ Test: User Registration
   it('should register a user and send a welcome email', async () => {
     jest.spyOn(userRepository, 'findOne').mockResolvedValueOnce(null);
     jest.spyOn(bcrypt, 'hash').mockResolvedValue('hashedpassword');
-    jest
-      .spyOn(emailService, 'sendWelcomeEmail')
-      .mockResolvedValue(Promise.resolve());
+    jest.spyOn(rabbitMQService, 'sendToQueue').mockResolvedValue(Promise.resolve());
 
     const result = await userService.register(
-      'test@example.com',
-      'password123',
+      'Retest@example.com',
+      'Password123!',
     );
     expect(result).toEqual({ message: 'User registered successfully' });
-    expect(emailService.sendWelcomeEmail).toHaveBeenCalledWith(
-      'test@example.com',
+    expect(rabbitMQService.sendToQueue).toHaveBeenCalledWith(
+      JSON.stringify({ email: 'Retest@example.com' }),
     );
   });
 
