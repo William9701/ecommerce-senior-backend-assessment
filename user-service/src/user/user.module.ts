@@ -8,6 +8,7 @@ import { RedisModule } from '../redis/redis.module'; //
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AuthMiddleware } from '../auth/auth.middleware';
 import { RedisService } from '../redis/redis.service';
+import { EmailService } from '../services/email.service';
 
 
 
@@ -21,8 +22,8 @@ import { RedisService } from '../redis/redis.service';
     RedisModule, // ✅ Import the RedisModule
   ],
   controllers: [UserController, UserProfileController],
-  providers: [UserService, JwtAuthGuard, AuthMiddleware, RedisService],
-  exports: [UserService],
+  providers: [UserService, EmailService, JwtAuthGuard, AuthMiddleware, RedisService],
+  exports: [UserService, EmailService],
 })
 
 

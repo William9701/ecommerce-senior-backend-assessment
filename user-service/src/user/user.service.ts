@@ -7,13 +7,15 @@ import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { RedisService } from '../redis/redis.service'; // Import Redis service
 import { v4 as uuidv4 } from 'uuid';
+import { EmailService } from '../services/email.service'; // Import EmailService
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User) private userRepository: Repository<User>,
     private jwtService: JwtService,
-    private redisService: RedisService // Inject Redis service
+    private redisService: RedisService, // Inject Redis service
+    private emailService: EmailService, // Inject EmailService
   ) {}
 
   async register(email: string, password: string) {
@@ -26,8 +28,16 @@ export class UserService {
     const user = this.userRepository.create({ email, password: hashedPassword });
     await this.userRepository.save(user);
 
+    // ✅ Send welcome email asynchronously
+    try {
+      await this.emailService.sendWelcomeEmail(email);
+    } catch (error) {
+      console.error("Error sending welcome email:", error);
+    }
+
     return { message: 'User registered successfully' };
-  }
+}
+
 
   async login(email: string, password: string, res: Response) {
     const user = await this.userRepository.findOne({ where: { email } });

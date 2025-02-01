@@ -4,6 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import { UserModule } from './user/user.module';
 import { AuthMiddleware } from './auth/auth.middleware';  // Import the middleware
 import { RedisModule } from './redis/redis.module';
+import { EmailService } from './services/email.service';
 
 @Module({
   imports: [
@@ -21,6 +22,8 @@ import { RedisModule } from './redis/redis.module';
     UserModule,
     RedisModule, // Import the RedisModule
   ],
+  providers: [EmailService],  // ✅ Register EmailService
+  exports: [EmailService],   // ✅ Export EmailService
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
