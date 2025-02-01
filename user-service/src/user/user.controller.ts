@@ -16,19 +16,12 @@ export class UserProfileController {
     return this.userService.logout(sessionId, res);
   }
 
-
   @Get(':id')
   @UseGuards(JwtAuthGuard) // Now retrieves token automatically
   async getUser(@Param('id') id: number, @Req() req) {
     return this.userService.getUser(id);
   }
-
-  
-
 }
-
-
-
 
 @Controller()
 export class UserController {

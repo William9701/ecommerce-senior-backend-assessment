@@ -6,6 +6,7 @@ import { AuthMiddleware } from './auth/auth.middleware';  // Import the middlewa
 import { RedisModule } from './redis/redis.module';
 import { EmailService } from './services/email.service';
 
+
 @Module({
   imports: [
     ConfigModule.forRoot(), // Load environment variables

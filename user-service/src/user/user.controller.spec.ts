@@ -15,7 +15,15 @@ describe('UserController', () => {
           provide: UserService,
           useValue: {
             register: jest.fn().mockResolvedValue({ message: 'User registered successfully' }),
-            login: jest.fn().mockResolvedValue({ message: 'Login successful' }), // Adjusted return value
+            login: jest.fn().mockImplementation(async (email: string, password: string, res: Response) => {
+              res.cookie('session_id', 'mocked_session_id', {
+                httpOnly: true,
+                secure: false,
+                sameSite: 'strict',
+                maxAge: 3600000,
+              });
+              return res.json({ message: 'Login successful', token: 'mocked_jwt_token' });
+            }),
             getUser: jest.fn().mockResolvedValue({ id: 1, email: 'test@example.com' }),
           },
         },
@@ -39,13 +47,22 @@ describe('UserController', () => {
 
     await userController.login('test@example.com', 'password123', mockRes);
 
+    // Check that cookie method was called correctly
     expect(mockRes.cookie).toHaveBeenCalledWith('session_id', expect.any(String), expect.objectContaining({
       httpOnly: true,
+      secure: false,
+      sameSite: 'strict',
       maxAge: 3600000, // 1 hour expiration
     }));
 
-    expect(mockRes.json).toHaveBeenCalledWith({ message: 'Login successful' });
+    // Check that json method was called with the success message
+    expect(mockRes.json).toHaveBeenCalledWith({ message: 'Login successful', token: 'mocked_jwt_token' });
   });
+
+  it('should retrieve user details', async () => {
+    expect(await userService.getUser(1)).toEqual({ id: 1, email: 'test@example.com' });
+  });
+  
 
   it('should retrieve user details', async () => {
     expect(await userService.getUser(1)).toEqual({ id: 1, email: 'test@example.com' });

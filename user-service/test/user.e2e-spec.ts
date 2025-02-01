@@ -16,7 +16,7 @@ describe('User API (e2e)', () => {
     await app.init();
   });
 
-  it('/users/register (POST)', async () => {
+  it('/register (POST)', async () => {
     const response = await request(app.getHttpServer())
       .post('/users/register')
       .send({ email: 'test25@example.com', password: 'password123' });
@@ -25,7 +25,7 @@ describe('User API (e2e)', () => {
     expect(response.body.message).toBe('User registered successfully');
   });
 
-  it('/users/login (POST)', async () => {
+  it('/login (POST)', async () => {
     const response = await request(app.getHttpServer())
       .post('/users/login')
       .send({ email: 'test@example.com', password: 'password123' });
