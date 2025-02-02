@@ -69,7 +69,7 @@ jobs:
       run: npm test
 
     - name: Build Docker image
-      run: docker build -t ecommerce-senior-backend-assessment .
+      run: docker build -t ecommerce-senior-backend-assessment ./user-service
 
     - name: Run Docker container
       run: docker run -d -p 3005:3005 --name ecommerce-senior-backend-assessment ecommerce-senior-backend-assessment
