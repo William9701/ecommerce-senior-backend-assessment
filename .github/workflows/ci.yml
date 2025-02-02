@@ -12,6 +12,33 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: user_db
+          MYSQL_USER: user
+          MYSQL_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --host=127.0.0.1 --user=root --password=root"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+      rabbitmq:
+        image: rabbitmq:3-management
+        ports:
+          - 5672:5672
+          - 15672:15672
+
+      redis:
+        image: redis:latest
+        ports:
+          - 6379:6379
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -19,8 +46,14 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Build Docker Image
-        run: docker build -t my-app .
+      - name: Build and Start Services with Docker Compose
+        run: docker-compose up -d --build
+
+      - name: Wait for Services to Start
+        run: sleep 10  # Give MySQL, RabbitMQ, and Redis some time to start
 
       - name: Run Tests Inside Docker
-        run: docker run --rm my-app npm test
+        run: docker exec ecommerce-senior-backend-assessment npm test
+
+      - name: Stop and Cleanup
+        run: docker-compose down
