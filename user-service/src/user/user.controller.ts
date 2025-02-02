@@ -3,9 +3,11 @@ import { Response } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { UserService } from './user.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RegisterDto } from '../dto/register.dto';
+import { LoginDto } from '../dto/login.dto';
 
-@ApiTags('Users') // Groups all endpoints under "Users" in Swagger
-@Controller('users')
+@ApiTags('Users') 
+@Controller('api/users')
 export class UserProfileController {
   constructor(private readonly userService: UserService) {}
 
@@ -31,8 +33,8 @@ export class UserProfileController {
   }
 }
 
-@ApiTags('Authentication') // Groups all endpoints under "Authentication" in Swagger
-@Controller()
+@ApiTags('Authentication') 
+@Controller("api/")
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
@@ -41,15 +43,10 @@ export class UserController {
   @ApiResponse({ status: 201, description: 'User registered successfully' })
   @ApiResponse({ status: 400, description: 'Invalid request' })
   @ApiBody({
-    schema: {
-      properties: {
-        email: { type: 'string', example: 'user@example.com' },
-        password: { type: 'string', example: 'P@ssw0rd123' }
-      }
-    }
+    type: RegisterDto,  // Ensuring Swagger uses DTO schema
   })
-  async register(@Body('email') email: string, @Body('password') password: string) {
-    return this.userService.register(email, password);
+  async register(@Body() registerDto: RegisterDto) {
+    return this.userService.register(registerDto.email, registerDto.password);
   }
 
   @Post('login')
@@ -57,14 +54,9 @@ export class UserController {
   @ApiResponse({ status: 200, description: 'User logged in successfully' })
   @ApiResponse({ status: 400, description: 'Invalid credentials' })
   @ApiBody({
-    schema: {
-      properties: {
-        email: { type: 'string', example: 'user@example.com' },
-        password: { type: 'string', example: 'P@ssw0rd123' }
-      }
-    }
+    type: LoginDto, // Ensuring Swagger uses DTO schema
   })
-  async login(@Body('email') email: string, @Body('password') password: string, @Res() res: Response) {
-    return this.userService.login(email, password, res);
+  async login(@Body() loginDto: LoginDto, @Res() res: Response) {
+    return this.userService.login(loginDto.email, loginDto.password, res);
   }
 }
