@@ -1,0 +1,11 @@
+groups:
+  - name: Login Alerts
+    rules:
+      - alert: HighLoginFailures
+        expr: user_login_failures_total > 5
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High number of login failures detected"
+          description: "More than 5 login failures detected in the last 5 minutes."

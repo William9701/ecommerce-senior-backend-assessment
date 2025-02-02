@@ -9,7 +9,13 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
 
   async onModuleInit() {
     try {
-      this.connection = await amqp.connect('amqp://localhost');
+      this.connection = await amqp.connect({
+        protocol: 'amqp',
+        hostname: process.env.RABBITMQ_HOST || 'rabbitmq',  // Use the container name
+        port: Number(process.env.RABBITMQ_PORT) || 5672,
+        username: process.env.RABBITMQ_USER || 'guest',
+        password: process.env.RABBITMQ_PASS || 'guest',
+      });
       this.channel = await this.connection.createChannel();
       await this.channel.assertQueue('emailQueue', { durable: true });
       this.logger.log('RabbitMQ connection and channel established successfully');

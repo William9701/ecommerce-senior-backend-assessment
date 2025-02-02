@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: ecommerce-senior-backend-assessment
+    ports:
+      - "3005:3005"  # Maps container port 3005 to host port 3005
+    depends_on:
+      - mysql
+      - rabbitmq
+      - prometheus
+      - grafana
+      - redis  # Added Redis dependency
+    networks:
+      - my_network
+    environment:
+      DATABASE_URL: mysql://root:root@mysql:3306/user_db  # Fixed MySQL credentials
+      RABBITMQ_URL: amqp://rabbitmq:5672                  # Explicitly added port
+      PROMETHEUS_URL: http://prometheus:9090
+      REDIS_URL: redis://redis:6379  # Redis connection URL
+    restart: always  # Ensure the service restarts automatically if it stops
+
+  mysql:
+    image: mysql:8
+    container_name: mysql_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: user_db
+      MYSQL_USER: user
+      MYSQL_PASSWORD: root
+    ports:
+      - "3306:3306"
+    networks:
+      - my_network
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"   # AMQP port for backend communication
+      - "15672:15672" # Management UI accessible at http://localhost:15672
+    networks:
+      - my_network
+    restart: always  # Ensure RabbitMQ restarts if needed
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090" # Prometheus UI accessible at http://localhost:9090
+    networks:
+      - my_network
+    restart: always  # Ensure Prometheus restarts if needed
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - "3001:3000" # Grafana UI accessible at http://localhost:3001
+    networks:
+      - my_network
+    restart: always  # Ensure Grafana restarts if needed
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - my_network
+    volumes:
+      - redis_data:/data
+    restart: always  # Ensure Redis restarts if needed
+
+volumes:
+  mysql_data:
+  redis_data:
+
+networks:
+  my_network:
+    driver: bridge

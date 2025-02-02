@@ -10,6 +10,7 @@ import { AuthMiddleware } from '../auth/auth.middleware';
 import { RedisService } from '../redis/redis.service';
 import { EmailService } from '../email/email.service';
 import { RabbitMQModule } from '../rabbitmq/rabbitmq.module';
+import { MonitoringModule } from '../monitoring/monitoring.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { RabbitMQModule } from '../rabbitmq/rabbitmq.module';
     }),
     RedisModule, // ✅ Import the RedisModule
     RabbitMQModule, // Import RabbitMQModule
+    MonitoringModule, // Import MonitoringModule
   ],
   controllers: [UserController, UserProfileController],
   providers: [

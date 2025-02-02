@@ -5,7 +5,6 @@ import {
   UnauthorizedException,
   InternalServerErrorException,
   ConflictException,
-  Logger,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -18,24 +17,28 @@ import { v4 as uuidv4 } from 'uuid';
 import { EmailService } from '../email/email.service';
 import { RabbitMQService } from '../rabbitmq/rabbitmq.service';
 import * as EmailValidator from 'email-validator';
+import { logger } from '../utils/logger'; // Import logger
+import { MonitoringService } from '../monitoring/monitoring.service';
 
 @Injectable()
 export class UserService {
-  private readonly logger = new Logger(UserService.name);
-
   constructor(
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
     private readonly redisService: RedisService,
     private readonly emailService: EmailService,
     private readonly rabbitMQService: RabbitMQService,
+    private readonly monitoringService: MonitoringService,
   ) {}
 
   async register(email: string, password: string): Promise<{ message: string }> {
+    logger.info(`Register request received for ${email}`);
+
     this.validateInput(email, password);
 
     const existingUser = await this.userRepository.findOne({ where: { email } });
     if (existingUser) {
+      logger.warn(`Email already in use: ${email}`);
       throw new ConflictException('Email already in use');
     }
 
@@ -43,7 +46,8 @@ export class UserService {
     const user = this.userRepository.create({ email, password: hashedPassword });
 
     await this.userRepository.save(user);
-    this.logger.log(`User registered: ${email}`);
+    this.monitoringService.increaseRegistrationCount(); // Increment registration metric
+    logger.info(`User successfully registered: ${email}`);
 
     await this.sendWelcomeEmail(email);
 
@@ -75,18 +79,21 @@ export class UserService {
     try {
       await this.rabbitMQService.sendToQueue(JSON.stringify({ email }));
     } catch (error) {
-      this.logger.error(`Failed to send welcome email to ${email}`, error.stack);
+      logger.error(`Failed to send welcome email to ${email}`, error.message);
     }
   }
 
   async login(email: string, password: string, res: Response) {
+    logger.info(`Login attempt for ${email}`);
     const user = await this.userRepository.findOne({ where: { email } });
     if (!user) {
+      logger.warn(`User not found: ${email}`);
       throw new NotFoundException('User not found');
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
+      logger.warn(`Invalid password for ${email}`);
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -99,8 +106,10 @@ export class UserService {
         JSON.stringify({ userId: user.id, token }),
         3600,
       );
+      this.monitoringService.increaseLoginCount(); // Increment login metric
+      logger.info(`Session stored in Redis for ${email}`);
     } catch (error) {
-      this.logger.error('Redis error:', error.stack);
+      logger.error(`Redis error for ${email}: ${error.message}`);
       throw new InternalServerErrorException('Error storing session in Redis');
     }
 
@@ -112,7 +121,7 @@ export class UserService {
         maxAge: 3600000,
       });
     } catch (error) {
-      this.logger.error('Error setting authentication cookie:', error.stack);
+      logger.error(`Cookie error for ${email}: ${error.message}`);
       throw new InternalServerErrorException('Error setting authentication cookie');
     }
 
