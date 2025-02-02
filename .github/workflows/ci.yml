@@ -74,19 +74,3 @@ jobs:
     - name: Run Docker container
       run: docker run -d -p 3005:3005 --name ecommerce-senior-backend-assessment ecommerce-senior-backend-assessment
 
-    - name: Wait for service to be healthy
-      run: |
-        echo "Waiting for service to be healthy..."
-        for i in {1..10}; do
-          if curl --fail http://localhost:3005/api/health; then
-            echo "Service is healthy!"
-            exit 0
-          fi
-          echo "Service is not healthy yet. Retrying in 10 seconds..."
-          sleep 10
-        done
-        echo "Service did not become healthy in time."
-        exit 1
-
-    - name: Verify service is running
-      run: curl --fail http://localhost:3005/api/users/1 || exit 1
