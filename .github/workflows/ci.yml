@@ -75,4 +75,4 @@ jobs:
       run: docker run -d -p 3005:3005 --name ecommerce-senior-backend-assessment ecommerce-senior-backend-assessment
 
     - name: Verify service is running
-      run: curl --fail http://localhost:3005 || exit 1
+      run: curl --fail http://localhost:3005/api/users/1 || exit 1
