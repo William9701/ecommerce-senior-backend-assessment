@@ -53,7 +53,12 @@ jobs:
         run: sleep 10  # Give MySQL, RabbitMQ, and Redis some time to start
 
       - name: Run Tests Inside Docker
-        run: docker exec ecommerce-senior-backend-assessment npm test
+        run: docker-compose exec app npm test
+
 
       - name: Stop and Cleanup
         run: docker-compose down
+
+      - name: Install Dependencies (in case they are missing)
+        run: docker-compose exec app npm install
+
