@@ -131,11 +131,10 @@ This endpoint retrieves details of a specific user by their ID.
 curl -X GET -b cookies.txt http://localhost:3005/api/users/1
 ```
 
-**Note:** This request requires authentication. To access user details, you must first **register** and **log in** to obtain valid session credentials (e.g., cookies or tokens). This security measure ensures that user data remains protected and follows best practices for API security.  
+**Note:** This request requires authentication. To access user details, you must first **register** and **log in** to obtain valid session credentials. This security measure ensures that user data remains protected and follows best practices for API security.  
 
 ---
 
-This version makes it clearer and more professional. Let me know if you need any tweaks! 🚀
 - **Logout a user**:
   ```bash
   curl -X GET -b cookies.txt http://localhost:3005/api/users/logout
