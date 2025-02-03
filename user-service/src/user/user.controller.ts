@@ -10,6 +10,15 @@ import { LoginDto } from '../dto/login.dto';
 @Controller('api/users')
 export class UserProfileController {
   constructor(private readonly userService: UserService) {}
+  @Get(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get user by ID' })
+  @ApiBearerAuth()
+  @ApiResponse({ status: 200, description: 'User retrieved successfully' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async getUser(@Param('id') id: number) {
+    return this.userService.getUser(id);
+  }
 
   @Get('logout')
   @UseGuards(JwtAuthGuard)
@@ -20,16 +29,6 @@ export class UserProfileController {
   async logout(@Req() req, @Res() res: Response) {
     const sessionId = req.cookies.session_id;
     return this.userService.logout(sessionId, res);
-  }
-
-  @Get(':id')
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get user by ID' })
-  @ApiBearerAuth()
-  @ApiResponse({ status: 200, description: 'User retrieved successfully' })
-  @ApiResponse({ status: 404, description: 'User not found' })
-  async getUser(@Param('id') id: number) {
-    return this.userService.getUser(id);
   }
 }
 
