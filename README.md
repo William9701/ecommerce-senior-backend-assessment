@@ -93,15 +93,11 @@ SMTP_SENDER=your_email
 ```
 
 ### Docker Setup
-1. **Build Docker Image**:
+1. **Build and Run Docker Container**:
    ```bash
-   docker build -t ecommerce-senior-backend-assessment ./user-service
+   docker-compose up --build
    ```
 
-2. **Run Docker Container**:
-   ```bash
-   docker run -d -p 3005:3000 --name ecommerce-senior-backend-assessment ecommerce-senior-backend-assessment
-   ```
 
 ### Kubernetes Setup
 1. **Apply Kubernetes Manifests**:
