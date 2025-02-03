@@ -120,11 +120,22 @@ SMTP_SENDER=your_email
   curl -X POST http://localhost:3005/api/login -H "Content-Type: application/json" -c cookies.txt -d '{"email": "test@example.com", "password": "Password123!"}'
   ```
 
-- **Retrieve user details**:
-  ```bash
-  curl -X GET -b cookies.txt http://localhost:3005/api/users/1
-  ```
 
+---
+
+- **Retrieve User Details**  
+
+This endpoint retrieves details of a specific user by their ID.  
+
+```bash
+curl -X GET -b cookies.txt http://localhost:3005/api/users/1
+```
+
+**Note:** This request requires authentication. To access user details, you must first **register** and **log in** to obtain valid session credentials (e.g., cookies or tokens). This security measure ensures that user data remains protected and follows best practices for API security.  
+
+---
+
+This version makes it clearer and more professional. Let me know if you need any tweaks! 🚀
 - **Logout a user**:
   ```bash
   curl -X GET -b cookies.txt http://localhost:3005/api/users/logout
