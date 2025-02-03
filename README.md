@@ -75,7 +75,7 @@ This project demonstrates the implementation of a scalable microservice-based sy
 ### Clone the Repository
 ```bash
 git clone git@github.com:William9701/ecommerce-senior-backend-assessment.git
-cd ecommerce-senior-backend-assessment
+cd ecommerce-senior-backend-assessment/user-service
 ```
 
 ### Create and Fill the .env File
@@ -188,14 +188,16 @@ SMTP_SENDER=your_email
 - CI/CD pipeline is set up using GitHub Actions.
 
 ### Assumptions and Decisions
-- The project uses MySQL as the relational database.
+- The project uses NestJS framework for NodeJS.
+- MySQL as the relational database.
 - Nodemailer is used for sending emails.
 - RabbitMQ is used for asynchronous email sending.
 - Winston is used for logging.
 - GitHub Actions is used for CI/CD.
+- Docker and Kubernetes for contanization and orchestration.
 
 ## Conclusion
-This project demonstrates the implementation of a scalable microservice-based system for a simple e-commerce application. The system includes user management, product listings, and order management services. The project is developed using Docker and Kubernetes for deployment, ensuring scalability, fault tolerance, and efficient handling of concurrent requests.
+This project demonstrates the implementation of a scalable microservice-based system for a simple e-commerce application. The system includes user management, product listings, and order management services. The project is developed using Docker and Kubernetes for deployment, ensuring scalability, fault tolerance, and efficient handling of concurrent requests for the user-service.
 
 For any questions or further assistance, feel free to reach out.
 
