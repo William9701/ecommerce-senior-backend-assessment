@@ -75,7 +75,7 @@ cd ecommerce-senior-backend-assessment/user-service
 ```
 
 ### Create and Fill the .env File
-Create a `.env` file in the root directory of the project and fill it with the following environment variables:
+Create a `.env` file in the root directory of the project "ecommerce-senior-backend-assessment/user-service" and fill it with the following environment variables:
 
 ```env
 DB_HOST=mysql_db
