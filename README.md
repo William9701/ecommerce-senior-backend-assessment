@@ -1,7 +1,3 @@
-Sure! Here's the updated README file with the additional instructions for creating and filling up the `.env` file:
-
----
-
 # E-commerce Senior Backend Assessment
 
 ## Overview
