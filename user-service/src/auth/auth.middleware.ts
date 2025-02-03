@@ -1,6 +1,7 @@
 import { Injectable, NestMiddleware, UnauthorizedException } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { RedisService } from '../redis/redis.service';  // Assuming RedisService is in src/redis
+import { logger } from '../utils/logger'; // Import logger
 
 @Injectable()
 export class AuthMiddleware implements NestMiddleware {
@@ -17,7 +18,7 @@ export class AuthMiddleware implements NestMiddleware {
     // Retrieve token from Redis
     const sessionData = await this.redisService.get(`session:${sessionId}`);
     if (!sessionData) {
-      throw new UnauthorizedException('Invalid session');
+      throw new UnauthorizedException('Invalid session, pls login to access this route');
     }
 
     const { userId, token } = JSON.parse(sessionData);
@@ -27,6 +28,7 @@ export class AuthMiddleware implements NestMiddleware {
 
     // Attach token automatically to the request header
     req.headers['authorization'] = `Bearer ${token}`;
+    logger.info('Token attached to request header');
     next();
   }
 }

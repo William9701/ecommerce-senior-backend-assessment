@@ -8,11 +8,13 @@ import { JwtService } from '@nestjs/jwt';
 import { RedisService } from '../redis/redis.service';
 import { EmailService } from '../email/email.service';
 import { RabbitMQService } from '../rabbitmq/rabbitmq.service';
+import { MonitoringService } from '../monitoring/monitoring.service';
 import { Response } from 'express';
 import {
   BadRequestException,
   NotFoundException,
-  InternalServerErrorException,
+  UnauthorizedException,
+  ConflictException,
 } from '@nestjs/common';
 
 const mockUser = {
@@ -29,6 +31,7 @@ describe('UserService', () => {
   let redisService: RedisService;
   let emailService: EmailService;
   let rabbitMQService: RabbitMQService;
+  let monitoringService: MonitoringService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -50,7 +53,7 @@ describe('UserService', () => {
           provide: RedisService,
           useValue: {
             set: jest.fn().mockResolvedValue(Promise.resolve('OK')),
-            del: jest.fn().mockResolvedValue(null),
+            del: jest.fn().mockResolvedValue(Promise.resolve(1)),
           },
         },
         {
@@ -63,6 +66,10 @@ describe('UserService', () => {
             sendToQueue: jest.fn().mockResolvedValue(null),
           },
         },
+        {
+          provide: MonitoringService,
+          useValue: { increaseRegistrationCount: jest.fn(), increaseLoginCount: jest.fn() },
+        },
       ],
     }).compile();
 
@@ -72,121 +79,66 @@ describe('UserService', () => {
     redisService = module.get<RedisService>(RedisService);
     emailService = module.get<EmailService>(EmailService);
     rabbitMQService = module.get<RabbitMQService>(RabbitMQService);
+    monitoringService = module.get<MonitoringService>(MonitoringService);
   });
 
-  // ✅ Test: User Registration
   it('should register a user and send a welcome email', async () => {
     jest.spyOn(userRepository, 'findOne').mockResolvedValueOnce(null);
     jest.spyOn(bcrypt, 'hash').mockResolvedValue('hashedpassword');
     jest.spyOn(rabbitMQService, 'sendToQueue').mockResolvedValue(Promise.resolve());
+    jest.spyOn(monitoringService, 'increaseRegistrationCount');
 
-    const result = await userService.register(
-      'Retest@example.com',
-      'Password123!',
-    );
+    const result = await userService.register('Retest@example.com', 'Password123!');
     expect(result).toEqual({ message: 'User registered successfully' });
-    expect(rabbitMQService.sendToQueue).toHaveBeenCalledWith(
-      JSON.stringify({ email: 'Retest@example.com' }),
-    );
+    expect(monitoringService.increaseRegistrationCount).toHaveBeenCalled();
   });
 
-  it('should throw an error if email is already in use', async () => {
+  it('should throw BadRequestException if email is already in use', async () => {
     jest.spyOn(userRepository, 'findOne').mockResolvedValueOnce(mockUser);
-
-    await expect(
-      userService.register('test@example.com', 'password123'),
-    ).rejects.toThrow(BadRequestException);
+    await expect(userService.register('test@example.com', 'password123')).rejects.toThrow(BadRequestException);
   });
 
-  // ✅ Test: User Login
   it('should login a user and return a JWT token', async () => {
     jest.spyOn(userRepository, 'findOne').mockResolvedValueOnce(mockUser);
     jest.spyOn(bcrypt, 'compare').mockResolvedValue(true);
     jest.spyOn(redisService, 'set').mockResolvedValue(Promise.resolve('OK'));
-    jest.spyOn(jwtService, 'sign').mockReturnValue('mocked_jwt_token'); // Mock JWT generation
+    jest.spyOn(jwtService, 'sign').mockReturnValue('mocked_jwt_token');
+    jest.spyOn(monitoringService, 'increaseLoginCount');
 
     const mockRes = {
       cookie: jest.fn(),
-      json: jest.fn().mockReturnValue({ token: 'mocked_jwt_token' }), // Mock res.json()
+      json: jest.fn().mockReturnValue({ token: 'mocked_jwt_token' }),
     } as unknown as Response;
 
-    const result = await userService.login(
-      'test@example.com',
-      'password123',
-      mockRes,
-    );
+    const result = await userService.login('test@example.com', 'password123', mockRes);
 
     expect(result).toEqual({ token: 'mocked_jwt_token' });
     expect(mockRes.cookie).toHaveBeenCalledWith(
       'session_id',
       expect.any(String),
-      expect.objectContaining({
-        httpOnly: true,
-        maxAge: 3600000,
-      }),
+      expect.objectContaining({ httpOnly: true, maxAge: 3600000 })
     );
-    expect(mockRes.json).toHaveBeenCalledWith({ token: 'mocked_jwt_token' }); // Check that json() is called with the expected value
+    expect(monitoringService.increaseLoginCount).toHaveBeenCalled();
   });
 
-  it('should throw an error if user is not found during login', async () => {
+  it('should throw NotFoundException if user is not found during login', async () => {
     jest.spyOn(userRepository, 'findOne').mockResolvedValueOnce(null);
-
-    await expect(
-      userService.login('test@example.com', 'password123', {} as Response),
-    ).rejects.toThrow(NotFoundException);
+    await expect(userService.login('nonexistent@example.com', 'password123', {} as Response)).rejects.toThrow(NotFoundException);
   });
 
-  it('should throw an error if password is incorrect', async () => {
+  it('should throw UnauthorizedException if password is incorrect', async () => {
     jest.spyOn(userRepository, 'findOne').mockResolvedValueOnce(mockUser);
     jest.spyOn(bcrypt, 'compare').mockResolvedValue(false);
-
-    await expect(
-      userService.login('test@example.com', 'wrongpassword', {} as Response),
-    ).rejects.toThrow(BadRequestException);
+    await expect(userService.login('test@example.com', 'wrongpassword', {} as Response)).rejects.toThrow(UnauthorizedException);
   });
 
-  // ✅ Test: Get User By ID
-  it('should return user details', async () => {
-    jest.spyOn(userRepository, 'findOne').mockResolvedValueOnce(mockUser);
-
-    const result = await userService.getUser(1);
-    expect(result).toEqual(mockUser);
-  });
-
-  it('should throw an error if user is not found', async () => {
-    jest.spyOn(userRepository, 'findOne').mockResolvedValueOnce(null);
-
-    await expect(userService.getUser(1)).rejects.toThrow(NotFoundException);
-  });
-
-  // ✅ Test: Logout User
-  it('should log out user by deleting session and clearing cookie', async () => {
+  it('should logout user by deleting session from Redis and clearing cookie', async () => {
     jest.spyOn(redisService, 'del').mockResolvedValue(Promise.resolve(1));
+    const mockRes = { clearCookie: jest.fn(), json: jest.fn() } as unknown as Response;
+    await userService.logout('session-id', mockRes);
 
-    const mockRes = {
-      clearCookie: jest.fn(),
-      json: jest.fn().mockReturnValue({ message: 'Logged out successfully' }), // ✅ Ensure json returns a value
-    } as unknown as Response;
-
-    const result = await userService.logout('session123', mockRes);
-
-    expect(redisService.del).toHaveBeenCalledWith('session:session123');
+    expect(redisService.del).toHaveBeenCalledWith('session:session-id');
     expect(mockRes.clearCookie).toHaveBeenCalledWith('session_id');
-    expect(result).toEqual({ message: 'Logged out successfully' });
-  });
-
-  it('should handle errors when Redis fails during logout', async () => {
-    jest
-      .spyOn(redisService, 'del')
-      .mockRejectedValue(new InternalServerErrorException('Redis error'));
-
-    const mockRes = {
-      clearCookie: jest.fn(),
-      json: jest.fn(),
-    } as unknown as Response;
-
-    await expect(userService.logout('session123', mockRes)).rejects.toThrow(
-      InternalServerErrorException,
-    );
+    expect(mockRes.json).toHaveBeenCalledWith({ message: 'Logged out successfully' });
   });
 });

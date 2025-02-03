@@ -32,7 +32,7 @@ import { RabbitMQModule } from './rabbitmq/rabbitmq.module'; // Import RabbitMQM
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     // Apply the AuthMiddleware to the user routes
-    consumer.apply(cookieParser(), AuthMiddleware).forRoutes('users');
+    consumer.apply(cookieParser(), AuthMiddleware).forRoutes('api/users');
   }
 }
 // In this example, we've added the AuthMiddleware to the user routes by calling consumer.apply(AuthMiddleware).forRoutes('users'). This will ensure that the middleware is executed for all routes under the /users path. You can also pass multiple paths as arguments to forRoutes to apply the middleware to multiple paths.
