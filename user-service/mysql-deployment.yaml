@@ -26,7 +26,7 @@ spec:
         - name: MYSQL_PASSWORD
           value: "root"
         ports:
-        - containerPort: 3306
+        - containerPort: 3307
           name: mysql
 ---
 apiVersion: v1
@@ -35,6 +35,6 @@ metadata:
   name: mysql
 spec:
   ports:
-  - port: 3306
+  - port: 3307
   selector:
     app: mysql

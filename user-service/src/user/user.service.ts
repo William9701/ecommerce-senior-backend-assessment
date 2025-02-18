@@ -19,6 +19,8 @@ import { RabbitMQService } from '../rabbitmq/rabbitmq.service';
 import * as EmailValidator from 'email-validator';
 import { logger } from '../utils/logger'; // Import logger
 import { MonitoringService } from '../monitoring/monitoring.service';
+import { plainToInstance } from 'class-transformer';
+import { Interface } from 'readline';
 
 @Injectable()
 export class UserService {
@@ -133,7 +135,7 @@ export class UserService {
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    return user;
+    return plainToInstance(User, user); // Apply transformation to exclude password
   }
 
   async logout(sessionId: string, res: Response) {
@@ -142,3 +144,7 @@ export class UserService {
     return res.json({ message: 'Logged out successfully' });
   }
 }
+
+
+
+

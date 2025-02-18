@@ -20,7 +20,7 @@ import { RabbitMQModule } from './rabbitmq/rabbitmq.module'; // Import RabbitMQM
       password: process.env.DB_PASS,
       database: process.env.DB_NAME,
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      synchronize: true, // Set to false in production
+      synchronize: process.env.NODE_ENV !== 'production',  // Set to false in production
     }),
     UserModule,
     RedisModule, // Import the RedisModule
@@ -35,4 +35,4 @@ export class AppModule implements NestModule {
     consumer.apply(cookieParser(), AuthMiddleware).forRoutes('api/users');
   }
 }
-// In this example, we've added the AuthMiddleware to the user routes by calling consumer.apply(AuthMiddleware).forRoutes('users'). This will ensure that the middleware is executed for all routes under the /users path. You can also pass multiple paths as arguments to forRoutes to apply the middleware to multiple paths.
+// In this example, we've added the AuthMiddleware to the api/user routes by calling consumer.apply(AuthMiddleware).forRoutes('api/users'). This will ensure that the middleware is executed for all routes under the api/users path. You can also pass multiple paths as arguments to forRoutes to apply the middleware to multiple paths.

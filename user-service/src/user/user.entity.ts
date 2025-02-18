@@ -1,4 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
+import { Exclude } from 'class-transformer';
 
 @Entity()
 export class User {
@@ -9,6 +10,7 @@ export class User {
   email: string;
 
   @Column()
+  @Exclude() // This prevents the password from being serialized
   password: string;
 
   @CreateDateColumn()

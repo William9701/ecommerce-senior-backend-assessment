@@ -21,7 +21,7 @@ spec:
         - containerPort: 3000
         env:
         - name: DATABASE_URL
-          value: "mysql://user:root@mysql:3306/user_db"
+          value: "mysql://user:root@mysql:3307/user_db"
         - name: RABBITMQ_URL
           value: "amqp://rabbitmq:5672"
         - name: REDIS_URL

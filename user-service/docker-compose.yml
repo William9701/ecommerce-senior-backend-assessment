@@ -15,7 +15,7 @@ services:
     networks:
       - my_network
     environment:
-      DATABASE_URL: mysql://root:root@mysql:3306/user_db  # Fixed MySQL credentials
+      DATABASE_URL: mysql://root:root@mysql:3307/user_db  # Fixed MySQL credentials
       RABBITMQ_URL: amqp://rabbitmq:5672                  # Explicitly added port
       PROMETHEUS_URL: http://prometheus:9090
       REDIS_URL: redis://redis:6379  # Redis connection URL
@@ -31,7 +31,7 @@ services:
       MYSQL_USER: user
       MYSQL_PASSWORD: root
     ports:
-      - "3306:3306"
+      - "3307:3307"
     networks:
       - my_network
     volumes:

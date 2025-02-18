@@ -17,7 +17,7 @@ import { MonitoringModule } from '../monitoring/monitoring.module';
     TypeOrmModule.forFeature([User]), // ✅ Register the User entity
     JwtModule.register({
       secret:
-        '02b5ac8542cba171c14ae5d871b5f401c296fe7d95300c22993d7648db7097e6', // Ensure JWT is registered
+        process.env.JWT_SECRET,
       signOptions: { expiresIn: '1h' },
     }),
     RedisModule, // ✅ Import the RedisModule
